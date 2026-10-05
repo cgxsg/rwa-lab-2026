@@ -61,7 +61,10 @@ the right allocation of risk, and how would you change it?
 
 **C2.** In a 2008 money-market fund breaking the buck, and in USDC's 2023 depeg, redemptions were
 handled very differently. Compare the two. For a tokenized T-Bill fund, what does it mean to "close
-the redemption channel", and what should happen to the queue when it does?
+the redemption channel", and what should happen to the queue when it does? Then look at the lever
+this lab actually ships: `pause()` (`PAUSER_ROLE`) freezes transfers, minting **and** redemption
+together — one switch, no partial setting. Why is that the wrong tool for a liquidity squeeze, and
+what would you rather have?
 
 > Your answer:
 
@@ -80,9 +83,11 @@ and who should be able to move it?
 
 <br><br><br>
 
-**D2.** The compliance power that freezes an account is the same power that can force-transfer
-tokens out of it. That is required for a regulated product and is also a censorship tool. Argue
-**both** sides, then say what safeguards you would add and who would hold the key.
+**D2.** A regulated fund asks for two levers: freeze an address (`setWhitelisted(addr, false)`) and
+burn a balance (`MINTER_ROLE`) — both censorship tools, both justified by the product. But Ex4.3
+shows the two **collide**: once an address is off the list, `burn()` reverts as well, because
+`_update` guards both endpoints. So a freeze also blocks a seizure. Argue **both** sides of handing
+an issuer these powers, then say what safeguards you would add and who should hold each key.
 
 > Your answer:
 
@@ -90,18 +95,20 @@ tokens out of it. That is required for a regulated product and is also a censors
 
 ---
 
-## E. Tests (Tier 1 required — this is Ex4)
+## E. Tests (Tier 1 required — this is Ex2, Ex3 and Ex4)
 
-Turn the red tests green in `test/exercises/01_AttestationTasks.t.sol` to cover the scenarios
-below, and write your test function names here:
+Turn the red tests green in `test/exercises/01_BridgeTasks.t.sol` to cover the scenarios below, and
+write your test function names here:
 
-| Scenario | Your test function name |
-|---|---|
-| A non-whitelisted address cannot receive shares, even by paying | |
-| A whitelisted holder cannot send shares to a non-whitelisted address | |
-| Removing an address from the list freezes that holder | |
-| A `MINTER_ROLE` holder can burn anyone's balance — the backdoor exists | |
-| `pause()` freezes transfers, minting and redemption together | |
+| Plank | Scenario | Your test function name |
+|---|---|---|
+| a | Shares exist while the custodian holds nothing | |
+| a | `realHoldings()` moves with no cash moving | |
+| b | The claim value floats while the share count stays | |
+| b | One `attest` re-prices every holder at once | |
+| d | A non-whitelisted address cannot receive shares, even by paying | |
+| d | A whitelisted holder cannot send shares to a non-whitelisted address | |
+| d | Removing an address freezes that holder — and blocks a burn | |
 
 Then write one more scenario you consider **most likely to be exploited** on a tokenized fund, and
 say which plank it breaks:

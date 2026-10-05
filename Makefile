@@ -26,7 +26,7 @@ install-foundry: ## Install Foundry (no foundryup, switches to a mainland mirror
 test: ## Run the core lab tests (Ex0 checkpoint, should be all green)
 	forge test --no-match-path 'test/{challenges,exercises}/*' -vv
 
-exercise: ## Run the student exercises Ex2/Ex4/Ex5/Ex6 (red until you finish them)
+exercise: ## Run the student exercises Ex2/Ex3/Ex4/Ex5/Ex6 (red until you finish them)
 	forge test --match-path 'test/exercises/*.t.sol' -vv
 
 challenge: ## Run the challenge (fails until the student solves it)

@@ -97,6 +97,9 @@ the exact command to fix it.
 
 All green means you can start. **If you cannot fix it, paste the entire `make doctor` output to the TA.**
 
+> New to Foundry? Read **`FOUNDRY-101.md`** before you touch the tests: how a test is shaped, the
+> cheatcodes you will need, the command band, and where to look when it breaks.
+
 ---
 
 ## 2. Quick start
@@ -175,11 +178,11 @@ queue is; the custodian must recognize the vault. Skip any one and the loop reve
 1. **Ex0 Environment**: `make doctor` all green → `make test` all green (7 passed)
 2. **Ex1 The loop** (warm-up, **not graded**): subscribe once from the command line, watch the
    claim value move when the NAV is attested, then enqueue one redemption
-3. **Ex2 Decimals and the claim**: fill in the `Ex2` tests — a share is not a dollar
-4. **Ex3 Break the NAV by hand**: use `cast` to attest a fake NAV and screenshot the claim value
-   far exceeding `realHoldings()` (plank b)
-5. **Ex4 Admission and permission**: write the compliance tests — whitelist blocks, force-transfer
-   backdoor (plank d)
+3. **Ex2 Custody**: fill in the `Ex2` tests — the shares exist while the custodian holds nothing
+   (plank a)
+4. **Ex3 Attestation**: fill in the `Ex3` tests — one NAV number re-prices the whole book (plank b)
+5. **Ex4 Admission**: fill in the `Ex4` tests — the whitelist blocks both ends, and a freeze also
+   stops a burn (plank d)
 6. **Ex5 The redemption queue**: implement the four TODOs in `src/exercises/RedemptionQueue.sol`
 7. **Ex6 Invariant testing**: implement the handler and write the two `invariant_*` tests
 8. Answer the discussion questions in `STUDENT-QUESTIONS.md`
@@ -247,9 +250,8 @@ offline. Drop them and the grader has to fetch from GitHub.
 What the zip must contain:
 
 1. The code, with `make exercise` all green (the grader re-runs `make test` themselves)
-2. Ex3's screenshot — the attested claim value far greater than `realHoldings()`
-3. Your answers to the discussion questions in `STUDENT-QUESTIONS.md`
-4. An architecture diagram in your `README.md` — a photo of a hand drawing is fine, but it must
+2. Your answers to the discussion questions in `STUDENT-QUESTIONS.md`
+3. An architecture diagram in your `README.md` — a photo of a hand drawing is fine, but it must
    show the **four planks** and where cash and shares cross the bridge
 
 ---

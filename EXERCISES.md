@@ -5,6 +5,9 @@ This file is **what you have to write**. The README tells you what the lab is; t
 Every exercise has one command that answers "am I done?". Red means not done, green means done.
 The tests under `test/exercises/` are **deliberately red** — that is not a bug report, that is your task.
 
+New to Foundry? **`FOUNDRY-101.md`** covers the test shape, the cheatcodes, the command band, and
+where to look when it breaks. Read it before Ex2.
+
 ---
 
 ## Overview
@@ -13,15 +16,16 @@ The tests under `test/exercises/` are **deliberately red** — that is not a bug
 |---|---|---|---|---|
 | Ex0 | Set up the environment, get the core tests passing | `make test` (7 green) | — | `README.md` "1. Setup" |
 | Ex1 | Walk the bridge once on the command line — **warm-up, not graded** | `make subscribe` → `make nav` → `make redeem` | all | `README.md` "2. Quick start", the Ex1 commands below |
-| Ex2 | Catch the decimals trap; see that a share is not a dollar | `test_Ex2_*` in `01_AttestationTasks.t.sol` | b | the Ex2 section below |
-| Ex3 | Post a false NAV and prove the claim outruns the holdings | a screenshot from `BreakIt.s.sol` | b | the Ex3 commands below |
-| Ex4 | Write tests for whitelisting and the issuer's backdoor | `test_Ex4_*` in the same file | d | the Ex4 table below, `STUDENT-QUESTIONS.md` D1/D2 |
+| Ex2 | Prove the shares exist while the custodian holds nothing | `test_Ex2_*` in `01_BridgeTasks.t.sol` | a | the Ex2 section below |
+| Ex3 | Prove one NAV number re-prices the whole book | `test_Ex3_*` in the same file | b | the Ex3 section below |
+| Ex4 | Prove who may hold shares, and how strong a freeze is | `test_Ex4_*` in the same file | d | the Ex4 table below, `STUDENT-QUESTIONS.md` D2 |
 | Ex5 | Implement the redemption queue (T+1, FIFO) | all of `02_QueueTasks.t.sol` green | c | `src/exercises/RedemptionQueue.sol` |
-| Ex6 | Implement the handler and write the two bridge invariants | all of `03_InvariantTasks.t.sol` green | a/c | `test/exercises/03_InvariantTasks.t.sol` |
+| Ex6 | Implement the handler and write the two bridge invariants | all of `03_InvariantTasks.t.sol` green | c | `test/exercises/03_InvariantTasks.t.sol` |
 | Ex7 | Turn the reporter's key into cash | `make challenge` (**red** until you solve it) | b | `test/challenges/FalseNav.t.sol` |
 
-The deck has three reference pages worth keeping open:
-the four planks, the three decimal scales, and the queue state machine.
+The four planks — custody (a), attestation (b), redemption (c), admission (d) — are the column
+above. Two reference pages in `README.md` are worth keeping open: the three decimal scales
+(§"The three decimal scales") and the queue state machine (Ex5 below).
 
 ---
 
@@ -65,78 +69,70 @@ moves the **value** of that balance moves with it. A stablecoin would have kept 
 
 ---
 
-## Ex2 · The claim is not a dollar
+## Ex2 · Custody — the shares exist, the box may not
 
-Open `test/exercises/01_AttestationTasks.t.sol` and write the two `Ex2` tests.
-
-| Function | What you are proving |
-|---|---|
-| `test_Ex2_ShareIsNotADollar` | after the NAV rises the share **count** is unchanged, but the **value** moved |
-| `test_Ex2_DecimalsTrap` | subscribe with `1000e18` instead of `1000e6` and read what happens |
-
-The decimals trap has the same shape as Lab 1 Ex2, but with a third scale:
-
-```
-shares   tBILL   18 decimals
-NAV      feed     8 decimals
-assets   USDC     6 decimals     18 + 8 - 6 = 20
-```
-
-> Hint: 1000 USDC is `1000e6`, not `1000e18`. At NAV 1.25, 1000 USDC buys
-> `1000e6 * 1e20 / 1.25e8 = 800e18` shares — **fewer** shares, not fewer dollars.
-
-The second test has no expected answer. Run it, read the numbers, then ask yourself:
-
-> This operation **did not revert**, and the vault's bookkeeping **is still consistent**.
-> So what exactly went wrong?
-
----
-
-## Ex3 · Post a false NAV (command line, no tests)
-
-The reporter is the chain's only window onto the asset — plank (b). Here you play a lying reporter.
-
-```bash
-# having already run Ex1's subscribe, so there are shares on the books:
-export VAULT=... CUSTODIAN=...
-forge script script/BreakIt.s.sol:BreakIt --rpc-url $RPC --broadcast
-```
-
-`BreakIt.s.sol` attests a NAV of `2e8` ("one share is worth two dollars") and prints, before and
-after:
-
-```
-NAV per share (8dp)     : 200000000
-totalClaimValue (6dp)   : 2000000000     <- what the chain now believes
-custodian realHoldings  : 1000000000     <- what is actually there
-```
-
-Deliverable: a screenshot of that printout. **That is the bridge failing on plank (b).**
-Nothing was hacked; a number was typed in.
-
-`FAKE_NAV=<8-decimal int>` overrides the default if you want a different lie.
-
----
-
-## Ex4 · The guest list and the backdoor
-
-Same file, `01_AttestationTasks.t.sol`, five tests:
+Open `test/exercises/01_BridgeTasks.t.sol` and write the two `Ex2` tests. This is plank (a).
 
 | Function | What you are proving |
 |---|---|
-| `test_Ex4_NonWhitelisted_CannotSubscribe` | no whitelist, no shares — even if you pay |
-| `test_Ex4_NonWhitelisted_CannotReceive` | `_update` checks **both** endpoints, not just the sender |
-| `test_Ex4_Unwhitelisted_HolderIsFrozen` | removing one address freezes that individual holder |
-| `test_Ex4_IssuerCanBurnAnyBalance` | **and a `MINTER_ROLE` holder can burn anyone's balance** |
-| `test_Ex4_Pause_BlocksEverything` | `pause()` freezes transfers, minting and redemption together |
+| `test_Ex2_SharesExistWhileTheCustodianHoldsNothing` | you hold `1000e18` shares while the custodian holds **zero** |
+| `test_Ex2_RealHoldingsIsJustANumber` | the "backing" is an integer a permissioned address typed in |
 
-The fourth one is not there to justify the power, it is there to **prove the backdoor exists**.
-The third and fourth are the two halves of the compliance tension: a regulated fund really does
-need to freeze and seize. That is question D2 in `STUDENT-QUESTIONS.md`.
+`subscribe()` takes your USDC into the vault and mints shares. It never talks to the custodian —
+so shares exist the moment you pay, whether or not anything backs them. Read both sides at once:
+`tBill.balanceOf(alice)` is `1000e18`, `custodian.realHoldings()` is `0`.
 
-For `test_Ex4_IssuerCanBurnAnyBalance`: the token's `MINTER_ROLE` starts with the deployer, and
-`script/Deploy.s.sol` grants it to the vault and the queue as well. Ask which of these *should*
-have it.
+For the second test: `recordPurchase` is `onlyRole(CUSTODIAN_ROLE)`, and `admin` holds that role.
+Call it and watch `realHoldings()` jump while `usdc.balanceOf(address(custodian))` stays at zero.
+The number the chain trusts is not cash that arrived — it is a number that was typed.
+
+---
+
+## Ex3 · Attestation — one number re-prices the whole book
+
+Same file, the two `Ex3` tests. Plank (b): the chain's only window onto the asset.
+
+| Function | What you are proving |
+|---|---|
+| `test_Ex3_TheClaimFloats_TheShareCountDoesNot` | NAV up: the share **count** is unchanged, the **value** moved |
+| `test_Ex3_OneCallMovesTheWholeBook` | one `attest` re-prices every holder at once |
+
+A single holder's claim value is `vault.assetsForShares(tBill.balanceOf(who))`; the whole book is
+`vault.totalClaimValue()`. After `vault.attest(int256(1.25e8))` on a 1000-share position, the claim
+goes `1000e6` → `1250e6` while the balance stays `1000e18`. A stablecoin would have kept 1:1 —
+that difference is the whole difference between a pegged token and a claim.
+
+`attest` is gated by `REPORTER_ROLE` (the deployer holds it), but look at what it *writes*: a bare
+number. Nothing downstream — subscription pricing, redemption payouts, either invariant — can
+check it against anything on-chain.
+
+> Want to see the same failure from the command line? `script/BreakIt.s.sol` attests a NAV of `2e8`
+> on a live Anvil and prints `totalClaimValue()` beside `custodian.realHoldings()`. It is the demo
+> from the session, **not** a deliverable. `FAKE_NAV=<8-decimal int>` overrides the default.
+
+---
+
+## Ex4 · Admission — where the guard is, and how strong it is
+
+Same file, three `Ex4` tests. Plank (d).
+
+| Function | What you are proving |
+|---|---|
+| `test_Ex4_NoKyc_NoShares_EvenIfYouPay` | no whitelist, no shares — even if you pay |
+| `test_Ex4_TransferChecksBothEndpoints` | `_update` checks the **receiver** too, not just the sender |
+| `test_Ex4_FreezeBeatsConfiscation` | off the list a holder is frozen — and **cannot be burned either** |
+
+All three pin the exact revert:
+`vm.expectRevert(abi.encodeWithSelector(TBillToken.NotWhitelisted.selector, who))`. A vague
+"it reverted" stays green even after the guard is removed, so assert the selector.
+
+The third is the surprising one. `_update` runs for **every** balance change, and `burn()` is a
+balance change — so the same guard that freezes a holder also stops the issuer seizing their
+shares. The compliance power cuts both ways: that tension is question **D2** in
+`STUDENT-QUESTIONS.md`.
+
+> `pause()` is the *other* lever (`PAUSER_ROLE`): it freezes transfers, minting and redemption
+> together. That is question **C2** — a different and blunter tool.
 
 ---
 
@@ -159,7 +155,14 @@ Acceptance:
 make exercise   # the 02_QueueTasks.t.sol group
 ```
 
-Three decimals, again — the same table as Ex2. Get it wrong and every payout is off by 10^12.
+Three decimal scales meet in `assetsAtNav`, and getting the power wrong is the classic silent
+bug — no revert, the invariant still holds, and every payout is off by 10^12:
+
+```
+shares   tBILL   18 decimals
+NAV      feed     8 decimals
+assets   USDC     6 decimals     18 + 8 - 6 = 20  ->  divide by 10^20
+```
 
 Two things worth noticing once it is green:
 

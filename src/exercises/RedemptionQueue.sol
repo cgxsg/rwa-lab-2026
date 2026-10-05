@@ -15,7 +15,7 @@ import {TBillVault} from "../TBillVault.sol";
 ///         tickets are honoured strictly first-in-first-out. When cash is short, the queue
 ///         backs up — and the people at the back are the ones who wait.
 ///
-///         This is also where the decimals bite again, exactly as in Lab 1 Ex5. Three scales:
+///         This is also where the decimals bite again. Three scales:
 ///           shares    18 decimals  (tBILL)
 ///           NAV        8 decimals  (per share)
 ///           assets     6 decimals  (USDC)
@@ -31,7 +31,7 @@ contract RedemptionQueue is AccessControl {
     uint256 public constant NAV_PRECISION = 1e8;
     uint256 public constant SHARE_PRECISION = 1e18;
     uint256 public constant ASSET_PRECISION = 1e6;
-    /// @dev 18 + 8 - 6 — the same number as in the vault, and in Lab 1 Ex5
+    /// @dev 18 + 8 - 6 — the same number as in the vault
     uint256 public constant DECIMALS_SCALE = 1e20;
 
     struct Request {
@@ -93,8 +93,7 @@ contract RedemptionQueue is AccessControl {
 
     /// @notice Value `shares` (18 decimals) in USDC smallest units (6 decimals), at an
     ///         8-decimal NAV
-    /// @dev The product carries 18 + 8 = 26 decimals and you want 6 — divide by 10 to the
-    ///      what? (This is exactly Lab 1 Ex5.1, one asset class later.)
+    /// @dev The product carries 18 + 8 = 26 decimals and you want 6 — divide by 10 to the what?
     function assetsAtNav(uint256 shares, uint256 nav) public pure returns (uint256) {
         revert("TODO Ex5.1: assetsAtNav");
     }
@@ -141,8 +140,7 @@ contract RedemptionQueue is AccessControl {
     // ==================================================================
 
     /// @notice Withdraw the cash credited to you by settled tickets
-    /// @dev Checks-effects-interactions: zero the balance before the transfer. Lab 1's
-    ///      vault.redeem did burn-then-transfer for the same reason.
+    /// @dev Checks-effects-interactions: zero the balance before the transfer.
     function claim() external returns (uint256 assets) {
         revert("TODO Ex5.4: claim");
     }
