@@ -46,14 +46,15 @@ If that prints a version, skip to Step 2. Otherwise install it with the script i
 bash scripts/install-foundry-cn.sh
 ```
 
-The script detects your platform (macOS ARM / Intel, Linux x86_64 / arm64), tries GitHub directly, and falls back to the `gh-proxy.com` mirror. Add the line it prints to `~/.zshrc` or `~/.bashrc`, then reopen your terminal:
+The script detects your platform, tries GitHub directly, and falls back to the `gh-proxy.com`
+mirror. Add the line it prints to `~/.zshrc` or `~/.bashrc`, then reopen your terminal:
 
 ```bash
 export PATH="$PATH:$HOME/.foundry/bin"
 ```
 
-> ⚠️ **Why not `foundryup`**: its release download goes through GitHub's CDN, which times out
-> reliably from mainland China. The mirror in `scripts/install-foundry-cn.sh` does not.
+> ⚠️ **Why not `foundryup`**: its download goes through GitHub's CDN, which times out reliably from
+> mainland China. The mirror does not.
 
 **Step 2. Get the code**
 
@@ -81,9 +82,8 @@ make test
 
 `7 passed; 0 failed` means you are set.
 
-The free tier is 120 core-hours/month (≈ 60 real hours on a 2-core machine), far more than
-this lab needs. **Stop it when you are done** at <https://github.com/codespaces> — a running
-Codespace keeps burning quota.
+The free tier is 120 core-hours/month — far more than this lab needs. **Stop it when you are done**
+at <https://github.com/codespaces>; a running Codespace keeps burning quota.
 
 ### Verify (both tracks)
 
@@ -91,11 +91,9 @@ Codespace keeps burning quota.
 make doctor
 ```
 
-In about 30 seconds this tells you whether the machine is ready for class: it checks the
-toolchain, the dependencies, and actually runs the core tests. Anything marked `✗` comes with
-the exact command to fix it.
-
-All green means you can start. **If you cannot fix it, paste the entire `make doctor` output to the TA.**
+In about 30 seconds this checks the toolchain, the dependencies, and runs the core tests. Anything
+marked `✗` comes with the exact command to fix it. All green means you can start; if you cannot fix
+it, paste the whole `make doctor` output to the TA.
 
 > New to Foundry? Read **`FOUNDRY-101.md`** before you touch the tests: how a test is shaped, the
 > cheatcodes you will need, the command band, and where to look when it breaks.
@@ -112,12 +110,11 @@ make anvil         # terminal A: start a local chain
 make deploy-anvil  # terminal B: deploy to it
 ```
 
-Deployment prints eight addresses — write them down (referred to below as `$USDC`,
-`$COMPLIANCE`, `$FEED`, `$TBILL`, `$CUSTODIAN`, `$VAULT`, `$QUEUE`). For the full set of
-subscription, attestation and redemption commands, see Ex1 and Ex3 in `EXERCISES.md`.
+Deployment prints the admin plus seven contracts. Export the ones you need (`$USDC`, `$COMPLIANCE`,
+`$FEED`, `$TBILL`, `$CUSTODIAN`, `$VAULT`, `$QUEUE`); the run-it-by-hand commands are in
+`EXERCISES.md` Ex1.
 
-**Your task list lives in `EXERCISES.md`** — every exercise's goal, acceptance command, and
-where to look when you get stuck.
+**Your task list is `EXERCISES.md`** — every exercise's goal, acceptance command, and where to look.
 
 ---
 
@@ -135,14 +132,6 @@ The bridge has four planks. Each one is a contract or a role in this repo.
 | `src/exercises/MockPriceFeed.sol` | **The NAV oracle.** 8 decimals; `1.00e8` is par | (b) attestation |
 | `src/exercises/RedemptionQueue.sol` | **T+1.** Shares in, a queue ticket out, cash later — **your TODOs, Ex5** | (c) redemption |
 
-### The three decimal scales — the sequel to Lab 1 Ex5
-
-```
-shares   tBILL   18 decimals
-NAV      feed     8 decimals
-assets   USDC     6 decimals     18 + 8 - 6 = 20  ->  DECIMALS_SCALE = 1e20
-```
-
 ### The two invariants you will defend (Ex6)
 
 ```
@@ -152,17 +141,8 @@ settlement solvency   usdc.balanceOf(queue) >= queue.totalClaimable()
 
 The first says the queue never loses a share and never invents one. The second says it never owes
 settled cash it does not hold. Neither is something the chain can verify against the off-chain
-asset — that is the point.
-
-There is a third relation that looks equally true and is not:
-
-```
-vault.reserveBalance() >= queue.pendingAssets()     // NOT an invariant
-```
-
-When the NAV rises, the extra value is not in the vault's USDC buffer — it is in the T-Bills at
-the custodian. So the vault can owe more than it holds cash for, and no code change fixes that:
-the cash has to be wired back first. Question C1 in `STUDENT-QUESTIONS.md` is about exactly this.
+asset — that is the point. The three decimal scales (18 + 8 − 6) are in `EXERCISES.md` Ex5; the
+third relation that *looks* like an invariant and is not is Ex6.
 
 `script/Deploy.s.sol` wires the whole system together, and the wiring at the bottom **is** part of
 the lesson: the vault needs `MINTER_ROLE`; the queue needs `MINTER_ROLE` **and** must be
@@ -173,33 +153,17 @@ queue is; the custodian must recognize the vault. Skip any one and the loop reve
 
 ## 4. Homework
 
-### Tier 1 (required) — Ex0–Ex6 in `EXERCISES.md`
+**Tier 1 (required)** — the exercises **Ex0–Ex6** in `EXERCISES.md`, and the discussion questions in
+`STUDENT-QUESTIONS.md`. Ex1 is a warm-up and is **not graded**. A local Anvil is enough: Tier 1 does
+**not** require a testnet. The acceptance command for every exercise is `make exercise` — green when
+you are done.
 
-1. **Ex0 Environment**: `make doctor` all green → `make test` all green (7 passed)
-2. **Ex1 The loop** (warm-up, **not graded**): subscribe once from the command line, watch the
-   claim value move when the NAV is attested, then enqueue one redemption
-3. **Ex2 Custody**: fill in the `Ex2` tests — the shares exist while the custodian holds nothing
-   (plank a)
-4. **Ex3 Attestation**: fill in the `Ex3` tests — one NAV number re-prices the whole book (plank b)
-5. **Ex4 Admission**: fill in the `Ex4` tests — the whitelist blocks both ends, and a freeze also
-   stops a burn (plank d)
-6. **Ex5 The redemption queue**: implement the four TODOs in `src/exercises/RedemptionQueue.sol`
-7. **Ex6 Invariant testing**: implement the handler and write the two `invariant_*` tests
-8. Answer the discussion questions in `STUDENT-QUESTIONS.md`
+**Tier 2 (bonus)** — deploy to Sepolia and verify the source on Etherscan; submit the contract
+links. The commands are Lab 1's `README.md` §6 — the flow is identical.
 
-> Tier 1 does **not** require deploying to a testnet — a local Anvil is enough.
-> The acceptance command for every exercise is `make exercise`; when you are done it should be all green.
-
-### Tier 2 (bonus)
-
-Deploy to the Sepolia testnet and verify the source on Etherscan; submit the contract links.
-See `README.md` §6 in Lab 1 for the exact commands — the flow is identical.
-
-### Tier 3 (challenge, optional)
-
-**Ex7 · Post a false NAV**: `make challenge` (`test/challenges/FalseNav.t.sol`).
-The reporter's number is the chain's only window onto the asset. Show what happens when it lies,
-and name the mechanism that would have caught it.
+**Tier 3 (challenge, optional)** — **Ex7**: `make challenge` (`test/challenges/FalseNav.t.sol`). The
+reporter's number is the chain's only window onto the asset; show what happens when it lies, and
+name the mechanism that would have caught it.
 
 ---
 
@@ -222,16 +186,11 @@ The custodian does not recognize the vault. `script/Deploy.s.sol` grants
 conversion is `shares * nav / 1e20`. Do not compute 18-decimal to 18-decimal.
 
 **Addresses change after restarting Anvil**
-Anvil starts from a clean state every time, so you must redeploy. To keep state, use
-`anvil --load-state demo-state.json`.
-
-**`make exercise` is all red**
-That is expected — the tests under `test/exercises/` are **deliberately red**; they are your task
-list. `make test` is the "everything is fine" checkpoint. Once you finish, `make exercise` goes green.
+Anvil starts from a clean state every time, so you must redeploy.
 
 **`make exercise` hangs, or an invariant failure looks strange**
-Foundry stores invariant counterexamples in `cache/invariant/` and replays them on the next run.
-To search for a fresh counterexample, `rm -rf cache/invariant` first.
+Foundry replays a cached counterexample from `cache/invariant/` on the next run.
+To search for a fresh one, `rm -rf cache/invariant` first.
 
 ---
 
@@ -258,15 +217,5 @@ What the zip must contain:
 
 ## 7. Questions left to you
 
-These have no standard answers. They are the real point of this lab:
-
-1. The vault holds `MINTER_ROLE`, so it can mint shares to anyone. Who should hold that key when
-   the shares represent a real fund?
-2. `attest()` is the only way the chain learns the NAV. What stops the reporter from lying? Name
-   at least two mechanisms — one technical, one legal or operational.
-3. The queue locks the payout at the NAV of `enqueue` time, not `settle` time. Who bears the risk
-   of a NAV move in between, the redeemer or the remaining holders?
-4. Whitelisting every holder means the issuer has a backdoor. Between "fully permissionless" and
-   "fully gated", where would a regulated tokenized fund have to sit, and why?
-
-Question 1 is the thread back to Lab 1's `MINTER_ROLE`; question 4 is the one with no clean answer.
+The discussion prompts live in `STUDENT-QUESTIONS.md` — one per plank, no standard answers, and the
+real point of this lab.

@@ -24,8 +24,7 @@ where to look when it breaks. Read it before Ex2.
 | Ex7 | Turn the reporter's key into cash | `make challenge` (**red** until you solve it) | b | `test/challenges/FalseNav.t.sol` |
 
 The four planks — custody (a), attestation (b), redemption (c), admission (d) — are the column
-above. Two reference pages in `README.md` are worth keeping open: the three decimal scales
-(§"The three decimal scales") and the queue state machine (Ex5 below).
+above. The three decimal scales are in Ex5 below.
 
 ---
 
