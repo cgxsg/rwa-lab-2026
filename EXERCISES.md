@@ -52,15 +52,23 @@ installs nothing locally.
 
 ```bash
 make anvil                  # terminal A, leave it running
-make deploy-anvil           # terminal B
-export VAULT=... TBILL=... QUEUE=... CUSTODIAN=... USDC=...
-make subscribe AMOUNT=1000000000
+make deploy-anvil           # terminal B — prints the admin + 7 contracts
+export ADMIN=... USDC=... TBILL=... VAULT=... QUEUE=... CUSTODIAN=...   # paste from that output
+
+# Fund yourself first — the deploy mints no USDC. This key is Anvil account 0, i.e. $ADMIN,
+# which the deploy already whitelisted.
+cast send $USDC "faucet(address,uint256)" $ADMIN 1000000000000 \
+  --rpc-url http://127.0.0.1:8545 \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+
+make subscribe AMOUNT=1000000000         # 1000 USDC (6 decimals)
 make nav                    # the attested NAV, 8 decimals
 make holdings               # what the custodian says it holds
-make redeem AMOUNT=1000000000000000000
+make redeem AMOUNT=1000000000000000000   # 1 share (18 decimals)
 make queue                  # what the queue still owes
 ```
 
+Skip the faucet step and `make subscribe` reverts — nothing funded your USDC balance.
 Watch one number in particular: after `subscribe`, your `balanceOf` is fixed, but when the NAV
 moves the **value** of that balance moves with it. A stablecoin would have kept 1:1.
 
