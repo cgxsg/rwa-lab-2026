@@ -220,3 +220,11 @@ What the zip must contain:
 
 The discussion prompts live in `STUDENT-QUESTIONS.md` — one per plank, no standard answers, and the
 real point of this lab.
+
+
+
+## Deployment (Sepolia)
+
+- **TBillToken**: `0xc2073d79bc1b793187ec049eb62f77da4d15d396` — https://sepolia.etherscan.io/address/0xc2073d79bc1b793187ec049eb62f77da4d15d396#code
+- **TBillVault**: `0x611007c80ac8f7da36e72fd30397286ad8ecb2df` — https://sepolia.etherscan.io/address/0x611007c80ac8f7da36e72fd30397286ad8ecb2df#code
+- **RedemptionQueue**: `0xfface9c34ff1ceda4187468db2b5f0bdb645c78f` — https://sepolia.etherscan.io/address/0xfface9c34ff1ceda4187468db2b5f0bdb645c78f#code
